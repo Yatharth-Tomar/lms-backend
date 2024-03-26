@@ -8,7 +8,7 @@ const crypto = require('crypto');
 const cookieOptions = {
   maxAge: 15 * 24 * 60 * 60 * 1000,
   httpOnly: true,
-  secure: true,
+  secure: false,
 };
 
 exports.home = (req, res) => {
