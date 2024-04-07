@@ -1,14 +1,21 @@
 const AppError = require('../utility/appError');
 const User = require('../model/user.schema');
-const { razorpay } = require('../server');
+// const  {razorpay} = require('../server');
 const crypto = require('crypto');
 const Payment = require('../model/payment.model');
+const Razorpay=require("razorpay")
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_SECRET,
+});
+
 
 exports.getRazorPayKey = async (req, res, next) => {
   try {
     res.status(200).json({
       success: true,
-      message,
+      message:"Razor pay api key. ",
       key: process.env.RAZORPAY_KEY_ID,
     });
   } catch (e) {
@@ -26,11 +33,13 @@ exports.buySubscription = async (req, res, next) => {
     if (user.role == 'ADMIN') {
       return next(new AppError('Admin cannot purchase our subscription', 400));
     }
-
+    console.log(process.env.RAZORPAY_PLAN_ID)
     const subscription = await razorpay.subscriptions.create({
       plan_id: process.env.RAZORPAY_PLAN_ID,
       customer_notify: 1,
+      total_count: 1
     });
+    console.log("subscription is ",subscription)
     user.subscription.id = subscription.id;
     user.subscription.status = subscription.status;
 
@@ -43,7 +52,13 @@ exports.buySubscription = async (req, res, next) => {
     });
   } catch (e) {
     console.log(e.message);
-    return next(new AppError('Could not buy subscription', 400));
+    // return next(new AppError(e, 400));
+    res.status(400).json({
+      success: false,
+      message:"Not possible",
+      e
+      
+    });
   }
 };
 exports.verifySubscription = async (req, res, next) => {
@@ -90,6 +105,7 @@ exports.cancelSubscripiton = async (req, res, next) => {
   try {
     const { id } = req.user;
     const user = await User.findById(id);
+   
     if (!user) {
       return next(new AppError('Unauthorized, please login', 400));
     }
@@ -98,14 +114,27 @@ exports.cancelSubscripiton = async (req, res, next) => {
     }
 
     const subscriptionId = user.subscription.id;
-    const subscription = await razorpay.subscriptions.cancel({
-      subscriptionId,
-    });
+   
+    const subscription = await razorpay.subscriptions.cancel(
+      subscriptionId
+    );
     user.subscription.status = subscription.status;
+   
     await user.save;
+    res.status(200).json({
+      success: true,
+      message: 'subscription canceled',
+      
+    })
   } catch (e) {
     console.log(e.message);
-    return next(new AppError('Could not cancel subscription', 400));
+    // return next(new AppError('Could not cancel subscription', 400));
+    res.status(400).json({
+      success: false,
+      message: 'subscription canceled',
+      e
+      
+    })
   }
 };
 exports.allPayments = async (req, res, next) => {

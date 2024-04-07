@@ -265,3 +265,70 @@ exports.updateUser = async (req, res, next) => {
     message: 'user DEtails updated successfully',
   });
 };
+
+
+//adding user skills by ID
+
+exports.addUserSkillsById=async(req,res,next)=>{
+    try{
+      console.log("i am called in server ")
+      const {skill1,skill2,skill3,skill4,skill5,skill6,skill7,skill8,skill9,skill10}=req.body;
+      const temp={skill1,skill2,skill3,skill4,skill5,skill6,skill7,skill8,skill9,skill10}
+      const data=Object.values(temp)
+      console.log("data is here ",data)
+      const {id}=req.params;
+      if(!id){
+        console.log("No id, User not identified")
+      }
+      const user= await User.findById(id);
+      if(!user){
+        return next(new AppError("User does not exists"));
+
+      }
+      user.userSkills=data;
+      await user.save();
+      console.log("User Skills are ",data)
+      res.status(200).json({
+        success:true,
+        message:"Skills added successfully",
+	data
+      })
+      return;
+      
+
+
+    }catch(e){
+      console.log("Error in adding skills ",e);
+      return next(new AppError("cannot add the skills :(",400))
+    }
+}
+
+//get user skills by id
+exports.getSkillsByID=async (req,res,next)=>{
+
+  try{
+    const {id}=req.params;
+    const user = await User.findById(id);
+    if(!user){
+      return next(new AppError("User not found:(",400))
+    }
+
+    const data=user.userSkills;
+    console.log(data);
+    const dataObject={
+      skills:data
+    }
+    typeof user.userSkills
+    res.status(200).json({
+      success:true,
+      message:"user skills recieved",
+      dataObject
+    })
+
+
+
+  }catch(e){
+    console.log("Error in adding skills ",e);
+      return next(new AppError("cannot add the skills :(",400))
+  }
+}
